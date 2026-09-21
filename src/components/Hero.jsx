@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import KorapayButton from './KorapayButton';
 
 const Hero = () => {
   const sectionStyles = {
@@ -43,9 +44,12 @@ const Hero = () => {
         Premium quality groceries at the best prices. Shop from the comfort of your home.
       </p>
       
-      <a href="/shop" className="btn btn-primary hover-lift">
-        Shop Now <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
-      </a>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
+        <a href="/shop" className="btn btn-primary hover-lift">
+          Shop Now <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
+        </a>
+        <KorapayButton />
+      </div>
     </section>
   );
 };
