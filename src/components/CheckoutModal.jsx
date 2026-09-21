@@ -5,6 +5,11 @@ import { useCart } from '../context/CartContext';
 /* ─── Klump placeholder integration ─── */
 const KLUMP_PUBLIC_KEY = 'pk_klump_PLACEHOLDER_KEY';
 
+const SAVE_TO_BUY_PLANS = [
+  ...Array.from({ length: 4 }, (_, i) => ({ id: `${i + 2}_weeks`, label: `${i + 2} Weeks`, type: 'weekly', duration: i + 2, interestRate: (i + 2) * 0.015 })),
+  ...Array.from({ length: 4 }, (_, i) => ({ id: `${i + 2}_months`, label: `${i + 2} Months`, type: 'monthly', duration: i + 2, interestRate: (i + 2) * 0.05 })),
+];
+
 const loadKlumpScript = () =>
   new Promise((resolve) => {
     if (window.Klump) return resolve(true);
@@ -48,8 +53,13 @@ const CheckoutModal = ({ onClose }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [method, setMethod] = useState('korapay');
+  const [plan, setPlan] = useState(SAVE_TO_BUY_PLANS[4]);
   const [klumpReady, setKlumpReady] = useState(false);
   const [paying, setPaying] = useState(false);
+
+  const interest = method === 'save_to_buy' ? Math.floor(cartTotal * plan.interestRate) : 0;
+  const grandTotal = cartTotal + interest;
+  const deposit = method === 'save_to_buy' ? Math.floor(grandTotal * 0.30) : grandTotal;
 
   // Load Klump script on mount
   useEffect(() => {
@@ -96,7 +106,7 @@ const CheckoutModal = ({ onClose }) => {
     window.Korapay.initialize({
       key: 'pk_live_ZEMDixqt5DcwbTVE35hR5rouew2LPu3UXPsWRNnG',
       reference: `samsara_${Date.now()}`,
-      amount: cartTotal,
+      amount: deposit,
       currency: 'NGN',
       customer: { name, email },
       onClose: () => setPaying(false),
@@ -114,7 +124,7 @@ const CheckoutModal = ({ onClose }) => {
     const klump = new window.Klump({
       publicKey: KLUMP_PUBLIC_KEY,
       data: {
-        amount: cartTotal,
+        amount: grandTotal,
         shipping_fee: 0,
         currency: 'NGN',
         merchant_reference: `samsara_${Date.now()}`,
@@ -143,7 +153,7 @@ const CheckoutModal = ({ onClose }) => {
 
   const handlePay = () => {
     if (!name || !email) return alert('Please fill in your name and email.');
-    if (method === 'korapay') payWithKorapay();
+    if (method === 'korapay' || method === 'save_to_buy') payWithKorapay();
     else payWithKlump();
   };
 
@@ -258,8 +268,36 @@ const CheckoutModal = ({ onClose }) => {
                     <span>📦 Klump</span>
                     <small>Buy Now, Pay Later (4 instalments)</small>
                   </label>
+                  <label className={`method-option ${method === 'save_to_buy' ? 'selected' : ''}`}>
+                    <input type="radio" value="save_to_buy" checked={method === 'save_to_buy'} onChange={() => setMethod('save_to_buy')} />
+                    <span>⏱ Save to Buy</span>
+                    <small>30% Deposit, balance in instalments via Korapay</small>
+                  </label>
                 </div>
               </div>
+
+              {method === 'save_to_buy' && (
+                <div className="form-group" style={{ background: '#f9fafb', padding: '10px', borderRadius: '8px', marginTop: '10px' }}>
+                  <label>Select Duration</label>
+                  <select className="form-input" value={plan.id} onChange={e => setPlan(SAVE_TO_BUY_PLANS.find(p => p.id === e.target.value))}>
+                    <optgroup label="Weekly Plans (1.5% interest/week)">
+                      {SAVE_TO_BUY_PLANS.filter(p => p.type === 'weekly').map(p => (
+                        <option key={p.id} value={p.id}>{p.label} ({(p.interestRate * 100).toFixed(1)}% interest)</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Monthly Plans (5% interest/month)">
+                      {SAVE_TO_BUY_PLANS.filter(p => p.type === 'monthly').map(p => (
+                        <option key={p.id} value={p.id}>{p.label} ({(p.interestRate * 100).toFixed(0)}% interest)</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  <div style={{ marginTop: '10px', fontSize: '0.9rem', color: '#4b5563' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Interest:</span> <span>+₦{interest.toLocaleString()}</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#111827', marginTop: '5px' }}><span>Total Payable:</span> <span>₦{grandTotal.toLocaleString()}</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#16a34a', marginTop: '5px' }}><span>Deposit Now (30%):</span> <span>₦{deposit.toLocaleString()}</span></div>
+                  </div>
+                </div>
+              )}
 
               {/* Order summary */}
               <div className="order-summary">
@@ -269,16 +307,21 @@ const CheckoutModal = ({ onClose }) => {
                     <span>₦{(i.price * i.qty).toLocaleString()}</span>
                   </div>
                 ))}
+                {method === 'save_to_buy' && (
+                  <div className="summary-line" style={{ color: '#f59e0b', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                    <span>Interest ({plan.label})</span><span>+₦{interest.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="summary-total">
                   <strong>Total</strong>
-                  <strong>₦{cartTotal.toLocaleString()}</strong>
+                  <strong>₦{grandTotal.toLocaleString()}</strong>
                 </div>
               </div>
 
               <div className="payment-actions">
                 <button className="btn btn-outline" onClick={() => setStep('cart')}>← Back</button>
                 <button className="btn btn-primary hover-lift" onClick={handlePay} disabled={paying}>
-                  {paying ? <><Loader size={16} className="spin" /> Processing…</> : `Pay ₦${cartTotal.toLocaleString()}`}
+                  {paying ? <><Loader size={16} className="spin" /> Processing…</> : (method === 'save_to_buy' ? `Pay Deposit ₦${deposit.toLocaleString()}` : `Pay ₦${grandTotal.toLocaleString()}`)}
                 </button>
               </div>
             </div>
