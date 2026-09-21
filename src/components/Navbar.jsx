@@ -1,18 +1,15 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { User, ShoppingCart, Moon, Menu, X } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { User, Heart, ShoppingCart, Moon, Menu } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
-const Navbar = ({ onCartClick }) => {
-  const { cartCount, user, logout } = useApp();
-  const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = React.useState(false);
+const Navbar = () => {
+  const { cartCount, setIsCartOpen } = useCart();
 
   const navStyles = {
     padding: '1rem 0',
     position: 'sticky',
     top: 0,
-    zIndex: 100,
+    zIndex: 50,
   };
 
   const containerStyles = {
@@ -29,60 +26,63 @@ const Navbar = ({ onCartClick }) => {
     letterSpacing: '-0.025em',
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const navLinksStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '2rem',
+  };
+
+  const linkStyles = {
+    color: 'var(--text-dark)',
+    textDecoration: 'none',
+    fontWeight: '500',
+    fontSize: '0.95rem',
+    transition: 'color 0.2s',
+  };
+
+  const iconContainerStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.5rem',
+  };
+
+  const iconStyles = {
+    cursor: 'pointer',
+    color: 'var(--text-dark)',
+    transition: 'color 0.2s',
+  };
+
+  const cartWrapStyles = {
+    position: 'relative',
+    cursor: 'pointer',
   };
 
   return (
     <nav className="glass" style={navStyles}>
       <div className="container" style={containerStyles}>
-        <Link to="/" style={logoStyles} className="heading-serif">
+        <a href="/" style={logoStyles} className="heading-serif">
           Samsarachoice
-        </Link>
+        </a>
 
-        {/* Desktop nav links */}
-        <div className="nav-links">
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/shop" className="nav-link">Shop</Link>
-          {user && <Link to="/dashboard" className="nav-link">Dashboard</Link>}
+        <div style={navLinksStyles}>
+          <a href="/" style={linkStyles}>Home</a>
+          <a href="/shop" style={linkStyles}>Shop</a>
+          <a href="/shop" style={{ ...linkStyles, color: 'var(--primary-green)', fontWeight: '600' }}>Save to Buy</a>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          {user ? (
-            <>
-              <span className="nav-user">Hi, {user.name.split(' ')[0]}</span>
-              <button className="btn-icon" onClick={handleLogout} title="Logout">
-                <User size={20} />
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.25rem', fontSize: '0.875rem' }}>
-              Sign In
-            </Link>
-          )}
-
-          <button className="btn-icon cart-icon-wrap" onClick={onCartClick} title="Cart">
-            <ShoppingCart size={20} />
-            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-          </button>
-
-          <button className="btn-icon mobile-menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+        <div style={iconContainerStyles}>
+          <User size={20} style={iconStyles} className="hover-lift" />
+          <Heart size={20} style={iconStyles} className="hover-lift" />
+          <div style={cartWrapStyles} className="hover-lift" onClick={() => setIsCartOpen(true)}>
+            <ShoppingCart size={20} style={iconStyles} />
+            {cartCount > 0 && (
+              <span className="cart-badge nav-cart-badge">{cartCount}</span>
+            )}
+          </div>
+          <Moon size={20} style={iconStyles} className="hover-lift" />
+          <Menu size={20} style={iconStyles} className="hover-lift" />
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div className="mobile-menu container">
-          <Link to="/" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>Home</Link>
-          <Link to="/shop" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>Shop</Link>
-          {user && <Link to="/dashboard" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>Dashboard</Link>}
-          {!user && <Link to="/login" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>Sign In</Link>}
-          {user && <button className="mobile-nav-link" onClick={handleLogout}>Logout</button>}
-        </div>
-      )}
     </nav>
   );
 };

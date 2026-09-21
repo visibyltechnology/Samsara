@@ -1,66 +1,55 @@
-import React from 'react';
-import { ShoppingCart, Zap } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-
-const formatPrice = (n) => `₦${n.toLocaleString()}`;
+import React, { useState } from 'react';
+import { ShoppingCart, Heart, Star, RefreshCw } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 const ProductCard = ({ product }) => {
-  const { addToCart, setCartOpen } = useApp();
-
-  const handleBuyNow = () => {
-    if (!product.inStock) return;
-    if (!window.Korapay) return alert('Payment loading, please try again in a moment.');
-    window.Korapay.initialize({
-      key: 'pk_live_ZEMDixqt5DcwbTVE35hR5rouew2LPu3UXPsWRNnG',
-      reference: `samsara_${Date.now()}`,
-      amount: product.price,
-      currency: 'NGN',
-      customer: { name: 'Guest', email: 'guest@samsarachoice.com' },
-      onSuccess: () => alert('Payment successful! Thank you.'),
-      onClose: () => {},
-    });
-  };
+  const { addToCart, saveForLater } = useCart();
+  const [saved, setSaved] = useState(false);
+  const [added, setAdded] = useState(false);
 
   const handleAddToCart = () => {
-    if (!product.inStock) return;
     addToCart(product);
-    setCartOpen(true);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  };
+
+  const handleSave = () => {
+    setSaved(prev => !prev);
   };
 
   return (
     <div className="product-card hover-lift">
       <div className="product-img-wrap">
         <img src={product.image} alt={product.name} className="product-img" />
-        {product.badge && (
-          <span className={`product-badge ${product.badge === 'Out of Stock' ? 'badge-oos' : 'badge-default'}`}>
-            {product.badge}
-          </span>
-        )}
+        {product.badge && <span className="product-badge">{product.badge}</span>}
+        <button
+          className={`save-btn ${saved ? 'saved' : ''}`}
+          onClick={handleSave}
+          title="Save for later"
+        >
+          <Heart size={16} fill={saved ? '#1b5e3a' : 'none'} />
+        </button>
       </div>
+
       <div className="product-body">
-        <span className="product-category">{product.category}</span>
+        <p className="product-category">{product.category}</p>
         <h3 className="product-name">{product.name}</h3>
         <p className="product-desc">{product.description}</p>
+
         <div className="product-footer">
-          <span className="product-price">{formatPrice(product.price)}</span>
-          <div className="product-actions">
-            <button
-              onClick={handleAddToCart}
-              disabled={!product.inStock}
-              className="btn btn-outline-green"
-              title="Add to cart"
-            >
-              <ShoppingCart size={16} />
-            </button>
-            <button
-              onClick={handleBuyNow}
-              disabled={!product.inStock}
-              className="btn btn-primary"
-            >
-              <Zap size={14} style={{ marginRight: '0.35rem' }} />
-              Buy Now
-            </button>
+          <div>
+            <span className="product-price">₦{product.price.toLocaleString()}</span>
+            <div className="subscribe-hint">
+              <RefreshCw size={11} />
+              <span>Subscribe & save monthly</span>
+            </div>
           </div>
+          <button
+            className={`btn btn-primary add-btn ${added ? 'added' : ''}`}
+            onClick={handleAddToCart}
+          >
+            {added ? '✓ Added' : <><ShoppingCart size={15} /> Add</>}
+          </button>
         </div>
       </div>
     </div>
