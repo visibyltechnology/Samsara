@@ -217,6 +217,15 @@ const Navbar = () => {
           >
             Shop All
           </Link>
+          <Link
+            to="/bundles"
+            className="text-sm font-medium transition-colors flex items-center gap-1"
+            style={{ color: 'hsl(0 0% 100% / 0.9)' }}
+            onMouseEnter={e => e.target.style.color = 'white'}
+            onMouseLeave={e => e.target.style.color = 'hsl(0 0% 100% / 0.9)'}
+          >
+            <Package className="h-4 w-4" /> Food Bundles
+          </Link>
         </div>
       </div>
     </header>

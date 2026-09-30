@@ -11,9 +11,11 @@ import Footer from './components/Footer';
 
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
+import BundlesPage from './pages/BundlesPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import SubscriptionCheckoutPage from './pages/SubscriptionCheckoutPage';
 import WishlistPage from './pages/WishlistPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -37,9 +39,11 @@ function App() {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/shop" element={<ShopPage />} />
+                  <Route path="/bundles" element={<BundlesPage />} />
                   <Route path="/product/:slug" element={<ProductDetailPage />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/subscription-checkout" element={<SubscriptionCheckoutPage />} />
                   <Route path="/wishlist" element={<WishlistPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
