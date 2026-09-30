@@ -33,7 +33,8 @@ const Navbar = () => {
   }, []);
 
   const checkAdmin = async (user) => {
-    setIsAdmin(user.email === 'samsarachoice1@gmail.com');
+    const ADMIN_EMAILS = ['samsarachoice1@gmail.com', 'macchristar.ng@gmail.com'];
+    setIsAdmin(ADMIN_EMAILS.includes(user.email));
   };
 
   // Fetch site settings for logo
