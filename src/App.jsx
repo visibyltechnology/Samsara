@@ -40,6 +40,7 @@ import AdminLoyalty from './pages/admin/AdminLoyalty';
 import AdminAbandonedCarts from './pages/admin/AdminAbandonedCarts';
 import AdminReferrals from './pages/admin/AdminReferrals';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminSubscriptions from './pages/admin/AdminSubscriptions';
 import { Outlet } from 'react-router-dom';
 
 const queryClient = new QueryClient();
@@ -95,6 +96,7 @@ function App() {
                 <Route path="abandoned-carts" element={<AdminAbandonedCarts />} />
                 <Route path="referrals" element={<AdminReferrals />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="subscriptions" element={<AdminSubscriptions />} />
               </Route>
             </Routes>
           </BrowserRouter>

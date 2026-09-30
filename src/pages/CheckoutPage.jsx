@@ -141,11 +141,12 @@ const PAYMENT_METHODS = [
     ),
   },
   {
-    id: 'cod',
-    label: 'Cash on Delivery',
-    sub: 'Pay at the door',
-    desc: 'Have exact cash ready when your order arrives.',
-    color: '#ea580c',
+    id: 'food_subscription',
+    label: 'Foodstuffs Subscription',
+    sub: 'Weekly or Monthly',
+    desc: 'Subscribe to have these food items delivered to you regularly.',
+    color: '#0284c7', // sky-600
+    badge: 'SUBSCRIBE',
     icon: (
       <svg width="28" height="18" viewBox="0 0 80 30" fill="none">
         <rect width="80" height="30" rx="5" fill="#ea580c"/>
@@ -174,6 +175,12 @@ const CheckoutPage = () => {
 
   // Custom Installment States
   const [installmentPlanId, setInstallmentPlanId] = useState(INSTALLMENT_OPTIONS[0].id);
+
+  // Subscription States
+  const [subscriptionFrequency, setSubscriptionFrequency] = useState('weekly');
+
+  // Subscription States
+  const [subscriptionFrequency, setSubscriptionFrequency] = useState('weekly');
 
   const fmt = (n) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n);
   
@@ -363,23 +370,58 @@ const CheckoutPage = () => {
     } catch (e) { alert(e.message); setLoading(false); }
   };
 
-  // ── Cash on Delivery ──────────────────────────────────────────────────────
-  const handleCOD = async () => {
+  // ── Food Subscription ─────────────────────────────────────────────────────
+  const handleFoodSubscription = async () => {
     setLoading(true);
     try {
-      const order = await createOrder('pending');
-      await clearCart();
-      setOrderId(order.id);
-      setOrderPlaced(true);
-    } catch (e) { alert(e.message); }
-    setLoading(false);
+      const meta = { is_subscription: true, frequency: subscriptionFrequency };
+      const order = await createOrder('pending', null, meta);
+      
+      // Initialize Korapay for the first subscription payment
+      if (!window.Korapay?.initialize) { alert('Korapay not loaded. Please refresh.'); setLoading(false); return; }
+
+      window.Korapay.initialize({
+        key: KORAPAY_PUBLIC_KEY,
+        reference: `samsara_sub_${order.id}_${Date.now()}`,
+        amount: grandTotal,
+        currency: 'NGN',
+        customer: { name: address.full_name, email: user.email },
+        onSuccess: function(data) {
+          (async () => {
+            await supabase.from('orders').update({ 
+              status: 'processing', 
+              payment_reference: data.reference,
+              payment_meta: { ...meta, payment_ref: data.reference }
+            }).eq('id', order.id);
+            
+            // Also insert into subscriptions table for admin tracking
+            try {
+               await supabase.from('subscriptions').insert({
+                 user_id: user.id,
+                 status: 'active',
+                 delivery_address: address,
+                 next_delivery_date: new Date(Date.now() + (subscriptionFrequency === 'weekly' ? 7 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+                 bundle_id: null // Custom basket
+               });
+            } catch(err) { console.error("Sub tracking error:", err); }
+
+            await clearCart();
+            setOrderId(order.id);
+            setOrderPlaced(true);
+            setLoading(false);
+          })();
+        },
+        onClose: function() { setLoading(false); },
+        onFailed: function() { setLoading(false); alert('Subscription payment failed.'); },
+      });
+    } catch (e) { alert(e.message); setLoading(false); }
   };
 
   const handlePlaceOrder = () => {
     if (paymentMethod === 'paystack') handleKorapayNative();
     else if (paymentMethod === 'klump') handleKlumpNative();
     else if (paymentMethod === 'installment') handleCustomInstallment();
-    else handleCOD();
+    else if (paymentMethod === 'food_subscription') handleFoodSubscription();
   };
 
   // ─── Order Success ───────────────────────────────────────────────────────────
@@ -390,8 +432,8 @@ const CheckoutPage = () => {
           <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-green-500" />
           <h1 className="text-2xl font-bold mb-2">Order Placed!</h1>
           <p className="text-muted-foreground mb-4 text-sm">
-            {paymentMethod === 'cod'
-                ? "Have exact cash ready when your delivery arrives."
+            {paymentMethod === 'food_subscription'
+                ? "Subscription activated! Your first delivery will be prepared right away."
                 : "Payment confirmed! We'll start preparing your order right away."}
           </p>
           <p className="font-mono text-xs text-muted-foreground mb-6">Order #{orderId?.slice(0, 8).toUpperCase()}</p>
@@ -500,6 +542,28 @@ const CheckoutPage = () => {
                 ))}
               </div>
 
+              {/* ── Subscription Frequency Selection ─────────────────────── */}
+              {paymentMethod === 'food_subscription' && (
+                <div className="mt-4 border border-sky-500/30 bg-sky-500/5 rounded-xl p-5 space-y-5">
+                  <div>
+                    <label className="text-sm font-semibold mb-2 block flex items-center gap-2">Choose Delivery Frequency</label>
+                    <div className="flex gap-3">
+                      <label className={`flex-1 p-3 border rounded-lg cursor-pointer flex items-center gap-2 ${subscriptionFrequency === 'weekly' ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200'}`}>
+                        <input type="radio" name="freq" value="weekly" checked={subscriptionFrequency === 'weekly'} onChange={() => setSubscriptionFrequency('weekly')} className="hidden" />
+                        <span className="font-medium text-sm">Weekly</span>
+                      </label>
+                      <label className={`flex-1 p-3 border rounded-lg cursor-pointer flex items-center gap-2 ${subscriptionFrequency === 'monthly' ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200'}`}>
+                        <input type="radio" name="freq" value="monthly" checked={subscriptionFrequency === 'monthly'} onChange={() => setSubscriptionFrequency('monthly')} className="hidden" />
+                        <span className="font-medium text-sm">Monthly</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-muted/40 rounded-lg text-sm text-muted-foreground">
+                    Your first box will be processed today. Subsequent deliveries will be billed automatically according to your frequency.
+                  </div>
+                </div>
+              )}
+              
               {/* ── Custom Installment Sub-Form ──────────────────────────── */}
               {paymentMethod === 'installment' && (
                 <div className="mt-4 border border-green-500/30 bg-green-500/5 rounded-xl p-5 space-y-5">

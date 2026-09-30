@@ -21,6 +21,7 @@ import AdminLoyalty from './admin/AdminLoyalty';
 import AdminAbandonedCarts from './admin/AdminAbandonedCarts';
 import AdminReferrals from './admin/AdminReferrals';
 import AdminSettings from './admin/AdminSettings';
+import AdminSubscriptions from './admin/AdminSubscriptions';
 
 const ADMIN_EMAILS = ['samsarachoice1@gmail.com', 'macchristar.ng@gmail.com'];
 
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { path: '/admin/coupons',                       icon: Ticket,          label: 'Coupons' },
   { path: '/admin/reviews',                       icon: Star,            label: 'Reviews' },
   { path: '/admin/newsletter',                    icon: Mail,            label: 'Newsletter' },
+  { path: '/admin/subscriptions',                 icon: Package,         label: 'Subscriptions' },
   { path: '/admin/delivery-zones',               icon: MapPin,          label: 'Delivery Zones' },
   { path: '/admin/loyalty',                       icon: Award,           label: 'Loyalty Points' },
   { path: '/admin/abandoned-carts',              icon: ShoppingBag,     label: 'Abandoned Carts' },
@@ -60,7 +62,7 @@ export default function AdminLayout() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <Shield className="h-10 w-10 text-primary animate-pulse" />
-        <p className="text-sm text-muted-foreground">Verifying admin access...</p>
+        <p className="text-sm text-slate-400">Verifying admin access...</p>
       </div>
     </div>
   );
@@ -85,7 +87,7 @@ export default function AdminLayout() {
 
       {/* Nav */}
       <nav className="flex-1 py-4 overflow-y-auto">
-        {!collapsed && <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest px-4 mb-2">Store</p>}
+        {!collapsed && <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest px-4 mb-2">Store</p>}
         <ul className="space-y-0.5 px-2">
           {NAV_ITEMS.map(item => (
             <li key={item.path}>
@@ -124,7 +126,7 @@ export default function AdminLayout() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-slate-900 text-slate-100">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-shrink-0">
         <Sidebar />
@@ -143,7 +145,7 @@ export default function AdminLayout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
+        <header className="bg-slate-800 border-b border-slate-700/50 px-6 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileOpen(true)}
@@ -151,10 +153,10 @@ export default function AdminLayout() {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-bold text-slate-900">Admin Dashboard</h1>
+            <h1 className="text-lg font-bold text-white">Admin Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-500 hidden sm:block">Samsarachoice Admin</span>
+            <span className="text-sm text-slate-400 hidden sm:block">Samsarachoice Admin</span>
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
               <Shield className="h-4 w-4 text-white" />
             </div>

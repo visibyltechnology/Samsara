@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   if (loading) return (
     <div className="space-y-6 animate-pulse">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1,2,3,4].map(i => <div key={i} className="h-28 bg-white rounded-2xl border" />)}
+        {[1,2,3,4].map(i => <div key={i} className="h-28 bg-slate-800 rounded-2xl border" />)}
       </div>
     </div>
   );
@@ -73,45 +73,45 @@ export default function AdminDashboard() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map(card => (
-          <div key={card.label} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div key={card.label} className="bg-slate-800 rounded-2xl border border-slate-700 p-5 shadow-sm">
             <div className="flex items-start justify-between mb-4">
               <div className={`p-2.5 rounded-xl ${card.color}`}>
                 <card.icon className="h-5 w-5 text-white" />
               </div>
               <span className="text-xs text-slate-400">{card.change}</span>
             </div>
-            <p className="text-2xl font-black text-slate-900">{card.value}</p>
-            <p className="text-sm text-slate-500 mt-1">{card.label}</p>
+            <p className="text-2xl font-black text-white">{card.value}</p>
+            <p className="text-sm text-slate-400 mt-1">{card.label}</p>
           </div>
         ))}
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
-          <h2 className="font-bold text-slate-900">Recent Orders</h2>
+      <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between p-5 border-b border-slate-700/50">
+          <h2 className="font-bold text-white">Recent Orders</h2>
           <a href="/admin/orders" className="text-sm text-primary hover:underline flex items-center gap-1">
             View all <ArrowUpRight className="h-3.5 w-3.5" />
           </a>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-900">
               <tr>
-                <th className="text-left px-5 py-3 font-semibold text-slate-600">Order ID</th>
-                <th className="text-left px-5 py-3 font-semibold text-slate-600">Customer</th>
-                <th className="text-left px-5 py-3 font-semibold text-slate-600">Amount</th>
-                <th className="text-left px-5 py-3 font-semibold text-slate-600">Date</th>
-                <th className="text-left px-5 py-3 font-semibold text-slate-600">Status</th>
+                <th className="text-left px-5 py-3 font-semibold text-slate-300">Order ID</th>
+                <th className="text-left px-5 py-3 font-semibold text-slate-300">Customer</th>
+                <th className="text-left px-5 py-3 font-semibold text-slate-300">Amount</th>
+                <th className="text-left px-5 py-3 font-semibold text-slate-300">Date</th>
+                <th className="text-left px-5 py-3 font-semibold text-slate-300">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {recentOrders.map(order => (
-                <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-3.5 font-mono text-xs font-bold text-slate-700">#{order.id.slice(0,8).toUpperCase()}</td>
-                  <td className="px-5 py-3.5 text-slate-700">{order.shipping_address?.full_name || 'N/A'}</td>
+                <tr key={order.id} className="hover:bg-slate-900 transition-colors">
+                  <td className="px-5 py-3.5 font-mono text-xs font-bold text-slate-200">#{order.id.slice(0,8).toUpperCase()}</td>
+                  <td className="px-5 py-3.5 text-slate-200">{order.shipping_address?.full_name || 'N/A'}</td>
                   <td className="px-5 py-3.5 font-bold text-primary">{fmt(order.total_amount)}</td>
-                  <td className="px-5 py-3.5 text-slate-500">{new Date(order.created_at).toLocaleDateString('en-GB')}</td>
+                  <td className="px-5 py-3.5 text-slate-400">{new Date(order.created_at).toLocaleDateString('en-GB')}</td>
                   <td className="px-5 py-3.5">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColors[order.status] || 'bg-gray-100 text-gray-600'}`}>
                       {order.status}
