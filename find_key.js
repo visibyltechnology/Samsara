@@ -1,0 +1,1 @@
+fetch('https://samsarachoice.com/assets/index-Chjr9M6p.js').then(r=>r.text()).then(t => { const match = t.match(/supabase\.co.*?['\x22]([^'\x22]+)['\x22]/); console.log(match ? match[1] : 'not found'); }).catch(console.error);
