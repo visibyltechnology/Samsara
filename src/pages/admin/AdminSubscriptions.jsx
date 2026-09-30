@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Package, Search, ChevronDown, ChevronUp } from 'lucide-react';
-
-const fmt = (n) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
+import { Search } from 'lucide-react';
 
 export default function AdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -15,21 +13,34 @@ export default function AdminSubscriptions() {
 
   const fetchSubs = async () => {
     setLoading(true);
-    const { data } = await supabase.from('subscriptions').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
-    setSubscriptions(data || []);
+    try {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('*, profiles(full_name, email)')
+        .order('created_at', { ascending: false });
+      setSubscriptions(data || []);
+    } catch (err) {
+      console.error(err);
+    }
     setLoading(false);
   };
 
   const updateSubStatus = async (id, status) => {
     await supabase.from('subscriptions').update({ status }).eq('id', id);
-    setSubscriptions(subscriptions.map(s => s.id === id ? { ...s, status } : s));
+    setSubscriptions(prev => prev.map(s => s.id === id ? { ...s, status } : s));
   };
 
-  const filtered = subscriptions.filter(s => 
-    s.id.toLowerCase().includes(search.toLowerCase()) || 
+  const filtered = subscriptions.filter(s =>
     (s.profiles?.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (s.profiles?.email || '').toLowerCase().includes(search.toLowerCase()) ||
     (s.delivery_address?.full_name || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  const getStatusStyle = (status) => {
+    if (status === 'active') return { bg: 'bg-green-500/10 text-green-400 border border-green-500/20' };
+    if (status === 'paused') return { bg: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' };
+    return { bg: 'bg-slate-700 text-slate-300' };
+  };
 
   return (
     <div className="space-y-6">
@@ -63,38 +74,39 @@ export default function AdminSubscriptions() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/50">
-                {filtered.map(sub => (
-                  <tr key={sub.id} className="hover:bg-slate-700/30 transition-colors">
-                    <td className="px-5 py-4 font-mono text-xs text-slate-400">#{sub.id.slice(0, 8).toUpperCase()}</td>
-                    <td className="px-5 py-4">
-                      <p className="font-medium text-slate-200">{sub.profiles?.full_name || sub.delivery_address?.full_name || 'Guest'}</p>
-                      <p className="text-xs text-slate-500">{sub.profiles?.email}</p>
-                    </td>
-                    <td className="px-5 py-4 text-slate-300">
-                      {new Date(sub.next_delivery_date).toLocaleDateString('en-GB', { dateStyle: 'medium' })}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={\`px-2.5 py-1 rounded-full text-xs font-semibold \${
-                        sub.status === 'active' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
-                        sub.status === 'paused' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-                        'bg-slate-700 text-slate-300'
-                      }\`}>
-                        {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <select 
-                        className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none"
-                        value={sub.status}
-                        onChange={(e) => updateSubStatus(sub.id, e.target.value)}
-                      >
-                        <option value="active">Active</option>
-                        <option value="paused">Paused</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map(sub => {
+                  const style = getStatusStyle(sub.status);
+                  return (
+                    <tr key={sub.id} className="hover:bg-slate-700/30 transition-colors">
+                      <td className="px-5 py-4 font-mono text-xs text-slate-400">#{sub.id.slice(0, 8).toUpperCase()}</td>
+                      <td className="px-5 py-4">
+                        <p className="font-medium text-slate-200">{sub.profiles?.full_name || sub.delivery_address?.full_name || 'Guest'}</p>
+                        <p className="text-xs text-slate-500">{sub.profiles?.email}</p>
+                      </td>
+                      <td className="px-5 py-4 text-slate-300">
+                        {sub.next_delivery_date
+                          ? new Date(sub.next_delivery_date).toLocaleDateString('en-GB', { dateStyle: 'medium' })
+                          : '—'}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className={['px-2.5 py-1 rounded-full text-xs font-semibold', style.bg].join(' ')}>
+                          {sub.status ? sub.status.charAt(0).toUpperCase() + sub.status.slice(1) : 'Unknown'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <select
+                          className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none"
+                          value={sub.status}
+                          onChange={(e) => updateSubStatus(sub.id, e.target.value)}
+                        >
+                          <option value="active">Active</option>
+                          <option value="paused">Paused</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filtered.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-5 py-12 text-center text-slate-400">No subscriptions found.</td>

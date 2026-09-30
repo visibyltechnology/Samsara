@@ -179,8 +179,7 @@ const CheckoutPage = () => {
   // Subscription States
   const [subscriptionFrequency, setSubscriptionFrequency] = useState('weekly');
 
-  // Subscription States
-  const [subscriptionFrequency, setSubscriptionFrequency] = useState('weekly');
+
 
   const fmt = (n) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n);
   
