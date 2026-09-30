@@ -290,6 +290,17 @@ export default function SubscriptionCheckoutPage() {
                 </div>
               </div>
 
+              {bundle.id === 'custom' && bundle.items && (
+                <div className="mb-6 space-y-2 max-h-48 overflow-y-auto pr-2">
+                  <p className="text-xs font-bold text-slate-500 uppercase">Items Included</p>
+                  {bundle.items.map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-sm text-slate-600">
+                      <span>{item.quantity}x {item.product.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-3 text-sm mb-6">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Bundle Price</span>
