@@ -24,6 +24,7 @@ import AdminPage from './pages/AdminPage';
 import OrdersPage from './pages/OrdersPage';
 import AddressBookPage from './pages/AddressBookPage';
 import LoyaltyPage from './pages/LoyaltyPage';
+import SubscriptionDashboardPage from './pages/SubscriptionDashboardPage';
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ function App() {
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/address-book" element={<AddressBookPage />} />
                   <Route path="/loyalty" element={<LoyaltyPage />} />
+                  <Route path="/my-subscriptions" element={<SubscriptionDashboardPage />} />
                 </Routes>
               </main>
               <Footer />

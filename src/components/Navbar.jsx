@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, Heart, ShoppingCart, Sun, Moon, LayoutDashboard, Package, LogOut } from 'lucide-react';
+import { Search, User, Heart, ShoppingCart, Sun, Moon, LayoutDashboard, Package, LogOut, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -126,6 +126,9 @@ const Navbar = () => {
                     </button>
                     <button onClick={() => { navigate('/orders'); setDropdownOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors">
                       <Package className="h-4 w-4" /> My Orders
+                    </button>
+                    <button onClick={() => { navigate('/my-subscriptions'); setDropdownOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors">
+                      <RefreshCw className="h-4 w-4" /> My Subscriptions
                     </button>
                     <button onClick={() => { navigate('/wishlist'); setDropdownOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors">
                       <Heart className="h-4 w-4" /> Wishlist

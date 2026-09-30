@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Shield, Users, ShoppingCart, CheckCircle, Clock, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Shield, Users, ShoppingCart, CheckCircle, Clock, CheckCircle2, ChevronDown, ChevronUp, Package, PauseCircle, XCircle, RefreshCw, Plus, Trash2, Edit2 } from 'lucide-react';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -17,6 +17,13 @@ const AdminPage = () => {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
 
+  const [adminSubs, setAdminSubs] = useState([]);
+  const [adminSubsLoading, setAdminSubsLoading] = useState(false);
+  const [bundles, setBundles] = useState([]);
+  const [bundleForm, setBundleForm] = useState({ name: '', description: '', image_url: '', weekly_price: '', monthly_price: '', is_active: true });
+  const [editingBundle, setEditingBundle] = useState(null);
+  const [bundleModal, setBundleModal] = useState(false);
+
   useEffect(() => {
     const checkAccess = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -29,6 +36,8 @@ const AdminPage = () => {
         setIsAdmin(true); 
         fetchUsers();
         fetchOrders();
+        fetchAdminSubs();
+        fetchBundles();
       } else {
         navigate('/'); // Kick non-admins out
       }
@@ -65,6 +74,52 @@ const AdminPage = () => {
       alert("Failed to update status");
     }
   };
+
+  const fetchAdminSubs = async () => {
+    setAdminSubsLoading(true);
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('*, bundles(name), profiles(full_name, email)')
+      .order('created_at', { ascending: false });
+    setAdminSubs(data || []);
+    setAdminSubsLoading(false);
+  };
+
+  const fetchBundles = async () => {
+    const { data } = await supabase.from('bundles').select('*').order('created_at', { ascending: false });
+    setBundles(data || []);
+  };
+
+  const saveBundle = async (e) => {
+    e.preventDefault();
+    const payload = {
+      ...bundleForm,
+      weekly_price: parseFloat(bundleForm.weekly_price),
+      monthly_price: parseFloat(bundleForm.monthly_price),
+    };
+    if (editingBundle) {
+      await supabase.from('bundles').update(payload).eq('id', editingBundle.id);
+    } else {
+      await supabase.from('bundles').insert([payload]);
+    }
+    await fetchBundles();
+    setBundleModal(false);
+    setEditingBundle(null);
+    setBundleForm({ name: '', description: '', image_url: '', weekly_price: '', monthly_price: '', is_active: true });
+  };
+
+  const deleteBundle = async (id) => {
+    if (!window.confirm('Delete this bundle?')) return;
+    await supabase.from('bundles').delete().eq('id', id);
+    await fetchBundles();
+  };
+
+  const updateSubStatus = async (subId, status) => {
+    await supabase.from('subscriptions').update({ status }).eq('id', subId);
+    await fetchAdminSubs();
+  };
+
+
 
   if (loading && !isAdmin) return <div className="container py-20 text-center animate-pulse">Verifying access...</div>;
   if (!isAdmin) return null;
@@ -103,6 +158,18 @@ const AdminPage = () => {
             className={`p-4 rounded-xl border text-left font-medium transition-colors ${activeTab === 'whitelist' ? 'bg-muted border-border text-primary' : 'bg-transparent border-transparent hover:bg-muted/50 text-muted-foreground'}`}
           >
             <div className="flex items-center gap-2"><Users className="h-4 w-4" /> Whitelist</div>
+          </button>
+          <button 
+            onClick={() => setActiveTab('subscriptions')}
+            className={`p-4 rounded-xl border text-left font-medium transition-colors ${activeTab === 'subscriptions' ? 'bg-muted border-border text-primary' : 'bg-transparent border-transparent hover:bg-muted/50 text-muted-foreground'}`}
+          >
+            <div className="flex items-center gap-2"><Package className="h-4 w-4" /> Subscriptions</div>
+          </button>
+          <button 
+            onClick={() => setActiveTab('bundles')}
+            className={`p-4 rounded-xl border text-left font-medium transition-colors ${activeTab === 'bundles' ? 'bg-muted border-border text-primary' : 'bg-transparent border-transparent hover:bg-muted/50 text-muted-foreground'}`}
+          >
+            <div className="flex items-center gap-2"><Package className="h-4 w-4" /> Bundles</div>
           </button>
         </div>
 
@@ -282,8 +349,174 @@ const AdminPage = () => {
             </div>
           )}
 
+          {/* SUBSCRIPTIONS TAB */}
+          {activeTab === 'subscriptions' && (
+            <div className="bg-card border rounded-2xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Package className="h-5 w-5" /> All Subscriptions
+                </h2>
+                <button onClick={fetchAdminSubs} className="text-xs bg-muted px-3 py-1.5 rounded-md hover:bg-muted/80 flex items-center gap-1">
+                  <RefreshCw className="h-3 w-3" /> Refresh
+                </button>
+              </div>
+              {adminSubsLoading ? (
+                <div className="py-10 text-center animate-pulse text-muted-foreground">Loading subscriptions...</div>
+              ) : adminSubs.length === 0 ? (
+                <div className="py-10 text-center text-muted-foreground">No subscriptions found.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-semibold">Customer</th>
+                        <th className="text-left px-4 py-3 font-semibold">Bundle</th>
+                        <th className="text-left px-4 py-3 font-semibold">Frequency</th>
+                        <th className="text-left px-4 py-3 font-semibold">Next Billing</th>
+                        <th className="text-left px-4 py-3 font-semibold">Status</th>
+                        <th className="text-left px-4 py-3 font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {adminSubs.map(sub => (
+                        <tr key={sub.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-medium">{sub.profiles?.full_name || 'N/A'}</p>
+                            <p className="text-xs text-muted-foreground">{sub.profiles?.email}</p>
+                          </td>
+                          <td className="px-4 py-3">{sub.bundles?.name || 'N/A'}</td>
+                          <td className="px-4 py-3 capitalize">{sub.frequency}</td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">
+                            {new Date(sub.next_billing_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              sub.status === 'active' ? 'bg-green-100 text-green-700' :
+                              sub.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {sub.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={sub.status}
+                              onChange={(e) => updateSubStatus(sub.id, e.target.value)}
+                              className="text-xs border rounded px-2 py-1 bg-background"
+                            >
+                              <option value="active">Active</option>
+                              <option value="paused">Paused</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* BUNDLES TAB */}
+          {activeTab === 'bundles' && (
+            <div className="bg-card border rounded-2xl p-6 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Package className="h-5 w-5" /> Bundle Management
+                </h2>
+                <button
+                  onClick={() => { setEditingBundle(null); setBundleForm({ name: '', description: '', image_url: '', weekly_price: '', monthly_price: '', is_active: true }); setBundleModal(true); }}
+                  className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" /> New Bundle
+                </button>
+              </div>
+              <div className="space-y-3">
+                {bundles.length === 0 ? (
+                  <div className="py-10 text-center text-muted-foreground">No bundles yet. Create one!</div>
+                ) : bundles.map(bundle => (
+                  <div key={bundle.id} className="flex items-center gap-4 p-4 border rounded-xl bg-background hover:bg-muted/20 transition-colors">
+                    {bundle.image_url && (
+                      <img src={bundle.image_url} alt={bundle.name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold">{bundle.name}</p>
+                        <span className={`px-2 py-0.5 text-xs rounded-full ${bundle.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {bundle.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{bundle.description}</p>
+                      <p className="text-xs font-medium mt-1">
+                        Weekly: {fmt(bundle.weekly_price)} · Monthly: {fmt(bundle.monthly_price)}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => { setEditingBundle(bundle); setBundleForm({ name: bundle.name, description: bundle.description || '', image_url: bundle.image_url || '', weekly_price: bundle.weekly_price, monthly_price: bundle.monthly_price, is_active: bundle.is_active }); setBundleModal(true); }}
+                        className="p-2 rounded-lg border hover:bg-muted transition-colors"
+                      >
+                        <Edit2 className="h-4 w-4 text-primary" />
+                      </button>
+                      <button
+                        onClick={() => deleteBundle(bundle.id)}
+                        className="p-2 rounded-lg border hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* Bundle Modal */}
+      {bundleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-card rounded-2xl shadow-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold mb-5">{editingBundle ? 'Edit Bundle' : 'Create Bundle'}</h3>
+            <form onSubmit={saveBundle} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium block mb-1">Bundle Name</label>
+                <input required className="w-full h-10 px-3 rounded-md border text-sm bg-background" value={bundleForm.name} onChange={e => setBundleForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Description</label>
+                <textarea rows={3} className="w-full px-3 py-2 rounded-md border text-sm bg-background resize-none" value={bundleForm.description} onChange={e => setBundleForm(f => ({ ...f, description: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Image URL</label>
+                <input className="w-full h-10 px-3 rounded-md border text-sm bg-background" placeholder="https://..." value={bundleForm.image_url} onChange={e => setBundleForm(f => ({ ...f, image_url: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium block mb-1">Weekly Price (₦)</label>
+                  <input required type="number" min="0" className="w-full h-10 px-3 rounded-md border text-sm bg-background" value={bundleForm.weekly_price} onChange={e => setBundleForm(f => ({ ...f, weekly_price: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-1">Monthly Price (₦)</label>
+                  <input required type="number" min="0" className="w-full h-10 px-3 rounded-md border text-sm bg-background" value={bundleForm.monthly_price} onChange={e => setBundleForm(f => ({ ...f, monthly_price: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="is_active" checked={bundleForm.is_active} onChange={e => setBundleForm(f => ({ ...f, is_active: e.target.checked }))} className="w-4 h-4 rounded" />
+                <label htmlFor="is_active" className="text-sm font-medium">Active (visible to customers)</label>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setBundleModal(false)} className="flex-1 h-10 rounded-lg border font-medium text-sm hover:bg-muted transition-colors">Cancel</button>
+                <button type="submit" className="flex-1 h-10 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary/90 transition-colors">
+                  {editingBundle ? 'Save Changes' : 'Create Bundle'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
