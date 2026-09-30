@@ -178,7 +178,7 @@ const CheckoutPage = () => {
 
   // Subscription States
   const [subscriptionFrequency, setSubscriptionFrequency] = useState('weekly');
-
+  const [subscriptionEligible, setSubscriptionEligible] = useState(false);
 
 
   const fmt = (n) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n);
@@ -205,6 +205,32 @@ const CheckoutPage = () => {
     init();
     if (cartItems.length === 0) navigate('/cart');
   }, [navigate, cartItems.length]);
+
+  // Check if ALL cart items belong to bundle-eligible (foodstuffs) categories
+  useEffect(() => {
+    const checkBundleEligibility = async () => {
+      if (cartItems.length === 0) { setSubscriptionEligible(false); return; }
+
+      // Get all unique category IDs from cart items
+      const categoryIds = [...new Set(cartItems.map(i => i.product?.category_id).filter(Boolean))];
+      if (categoryIds.length === 0) { setSubscriptionEligible(false); return; }
+
+      // Fetch those categories and check if ALL are is_bundle = true
+      const { data: cats } = await supabase
+        .from('categories')
+        .select('id, is_bundle')
+        .in('id', categoryIds);
+
+      const allAreBundle = cats && cats.length > 0 && cats.every(c => c.is_bundle === true);
+      setSubscriptionEligible(allAreBundle);
+
+      // If currently selected subscription but no longer eligible, reset payment
+      if (!allAreBundle && paymentMethod === 'food_subscription') {
+        setPaymentMethod('paystack');
+      }
+    };
+    checkBundleEligibility();
+  }, [cartItems, paymentMethod]);
 
   const createOrder = async (status = 'pending', paymentRef = null, meta = {}) => {
     const { data: order, error } = await supabase.from('orders').insert({
@@ -524,7 +550,7 @@ const CheckoutPage = () => {
             <div className="bg-card border rounded-2xl p-6 shadow-sm">
               <h2 className="font-bold text-lg mb-6 flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Payment Method</h2>
               <div className="space-y-3">
-                {PAYMENT_METHODS.map(m => (
+                {PAYMENT_METHODS.filter(m => m.id !== 'food_subscription' || subscriptionEligible).map(m => (
                   <label key={m.id} className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === m.id ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-muted-foreground/30 hover:bg-muted/20'}`}>
                     <input type="radio" name="payment" value={m.id} checked={paymentMethod === m.id} onChange={() => setPaymentMethod(m.id)} className="mt-1 h-4 w-4 accent-primary shrink-0" />
                     <div className="shrink-0 mt-0.5">{m.icon}</div>
@@ -539,6 +565,12 @@ const CheckoutPage = () => {
                     {paymentMethod === m.id && <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />}
                   </label>
                 ))}
+                {!subscriptionEligible && (
+                  <div className="flex items-start gap-3 p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 text-slate-400 text-xs">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
+                    <p><span className="font-semibold text-amber-600">Subscription unavailable:</span> Your cart contains non-foodstuff items. To unlock the Foodstuffs Subscription option, ensure all items are from designated food bundle categories.</p>
+                  </div>
+                )}
               </div>
 
               {/* ── Subscription Frequency Selection ─────────────────────── */}
