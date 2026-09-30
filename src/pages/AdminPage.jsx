@@ -24,14 +24,14 @@ const AdminPage = () => {
         navigate('/login');
         return;
       }
-      // Assuming a generic role check or specific admin user check
-      const { data } = await supabase.rpc('has_role', { _user_id: session.user.id, _role: 'admin' });
-      
-      // FALLBACK: If rpc fails or doesn't exist, we just let them view it for demo purposes, 
-      // but in production we'd enforce the boolean `data`. For now, let's assume they are admin.
-      setIsAdmin(true); 
-      fetchUsers();
-      fetchOrders();
+      // Grant admin access to the specific email
+      if (session.user.email === 'samsarachoice1@gmail.com') {
+        setIsAdmin(true); 
+        fetchUsers();
+        fetchOrders();
+      } else {
+        navigate('/'); // Kick non-admins out
+      }
     };
     checkAccess();
   }, [navigate]);

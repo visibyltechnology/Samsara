@@ -22,19 +22,18 @@ const Navbar = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) checkAdmin(session.user.id);
+      if (session?.user) checkAdmin(session.user);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) checkAdmin(session.user.id);
+      if (session?.user) checkAdmin(session.user);
       else { setIsAdmin(false); }
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdmin = async (userId) => {
-    const { data } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
-    setIsAdmin(!!data);
+  const checkAdmin = async (user) => {
+    setIsAdmin(user.email === 'samsarachoice1@gmail.com');
   };
 
   // Fetch site settings for logo
