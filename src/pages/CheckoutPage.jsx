@@ -183,7 +183,7 @@ const CheckoutPage = () => {
 
   const fmt = (n) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n);
   
-  const shipping = cartTotal >= 80000 ? 0 : (STATE_SHIPPING_FEES[address.state] ?? STATE_SHIPPING_FEES.default);
+  const shipping = (cartTotal >= 80000) ? 0 : (address.state ? (STATE_SHIPPING_FEES[address.state] ?? STATE_SHIPPING_FEES.default) : 0);
   const subTotal = cartTotal + shipping;
 
   // Installment Calculations
