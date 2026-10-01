@@ -42,14 +42,22 @@ export default function AdminCategories() {
       is_bundle: form.is_bundle
     };
 
+    let errorObj = null;
     if (editing) {
-      await supabase.from('categories').update(payload).eq('id', editing.id);
+      const { error } = await supabase.from('categories').update(payload).eq('id', editing.id);
+      errorObj = error;
     } else {
-      await supabase.from('categories').insert([payload]);
+      const { error } = await supabase.from('categories').insert([payload]);
+      errorObj = error;
     }
     
-    await fetchCategories();
-    setModal(false);
+    if (errorObj) {
+      alert(`Error saving category: ${errorObj.message}`);
+      console.error("Save error:", errorObj);
+    } else {
+      await fetchCategories();
+      setModal(false);
+    }
     setSaving(false);
   };
 
