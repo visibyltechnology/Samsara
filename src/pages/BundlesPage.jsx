@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Clock, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, Plus, Minus, ShoppingBag, Package } from 'lucide-react';
 
 export default function BundlesPage() {
   const [categories, setCategories] = useState([]);
@@ -14,14 +14,12 @@ export default function BundlesPage() {
   const location = useLocation();
 
   useEffect(() => {
-    // If we landed here from a specific category query, we could pre-select or scroll to it
     fetchBundleData();
   }, [location]);
 
   const fetchBundleData = async () => {
     try {
       setLoading(true);
-      // 1. Fetch categories designated as bundles
       const { data: cats, error: catError } = await supabase
         .from('categories')
         .select('*')
@@ -34,7 +32,6 @@ export default function BundlesPage() {
       }
       setCategories(cats);
 
-      // 2. Fetch products that belong to these categories
       const categoryIds = cats.map(c => c.id);
       const { data: prods, error: prodError } = await supabase
         .from('products')
@@ -67,7 +64,6 @@ export default function BundlesPage() {
     });
   };
 
-  // Calculate totals
   const selectedProducts = Object.entries(basket).map(([productId, quantity]) => {
     const product = products.find(p => p.id === productId);
     return { product, quantity, total: (product?.price || 0) * quantity };
@@ -78,7 +74,6 @@ export default function BundlesPage() {
   const handleSubscribe = (frequency) => {
     if (baseTotal === 0) return;
     
-    // Create a dynamic bundle object to pass to checkout
     const customBundle = {
       id: 'custom',
       name: 'Custom Food Subscription',
@@ -86,7 +81,7 @@ export default function BundlesPage() {
       image_url: selectedProducts[0]?.product?.image_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=1000',
       weekly_price: baseTotal,
       monthly_price: baseTotal * 4,
-      items: selectedProducts // We can pass items to checkout for metadata
+      items: selectedProducts 
     };
 
     navigate('/subscription-checkout', { 
@@ -100,76 +95,98 @@ export default function BundlesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 pt-20 pb-32">
-        <div className="container mx-auto px-4 text-center">
-          <div className="animate-pulse flex flex-col items-center">
-            <div className="h-10 w-64 bg-slate-200 rounded mb-4"></div>
-            <div className="h-4 w-96 bg-slate-200 rounded"></div>
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+             <Package className="h-6 w-6 text-primary" />
           </div>
+          <div className="h-6 w-48 bg-muted rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-8 pb-32">
-      <div className="container mx-auto px-4">
-        
-        {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h1 className="text-4xl font-bold tracking-tight mb-4 text-slate-900">Build Your Subscription</h1>
-          <p className="text-lg text-slate-600">
+    <div className="min-h-screen bg-background pb-32">
+      
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-primary/5 py-20 border-b border-border">
+        {/* Background Gradients */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[40%] h-[60%] bg-primary/20 blur-[120px] rounded-full mix-blend-multiply" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[60%] bg-purple-500/20 blur-[120px] rounded-full mix-blend-multiply" />
+        </div>
+
+        <div className="container relative z-10 px-4 text-center max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-background border shadow-sm text-xs font-semibold text-primary mb-6">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Flexible Recurring Deliveries
+          </div>
+          <h1 className="text-4xl md:text-5xl font-display font-black tracking-tight mb-6">
+            Build Your <span className="text-primary">Custom</span> Subscription
+          </h1>
+          <p className="text-lg text-muted-foreground leading-relaxed">
             Select essential food items from our bundle categories to create your own recurring delivery. 
             Fresh food delivered automatically, weekly or monthly!
           </p>
         </div>
+      </div>
 
+      <div className="container mx-auto px-4 mt-12">
         {categories.length === 0 ? (
-          <div className="text-center py-20">
-            <ShoppingBag className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-slate-900">No Bundle Categories Found</h3>
-            <p className="text-slate-500 mt-2">The admin hasn't designated any categories as food bundles yet.</p>
+          <div className="text-center py-20 bg-card border rounded-3xl shadow-sm max-w-2xl mx-auto">
+            <div className="h-16 w-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <ShoppingBag className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-bold font-display">No Bundle Categories Found</h3>
+            <p className="text-muted-foreground mt-2">The admin hasn't designated any categories as food bundles yet.</p>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-16">
             {categories.map(category => {
               const categoryProducts = products.filter(p => p.category_id === category.id);
               if (categoryProducts.length === 0) return null;
 
               return (
-                <div key={category.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-6">{category.name}</h2>
+                <div key={category.id} className="scroll-mt-24">
+                  <div className="flex items-center gap-4 mb-8">
+                    <h2 className="text-3xl font-display font-bold">{category.name}</h2>
+                    <div className="h-px bg-border flex-1 mt-2"></div>
+                  </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {categoryProducts.map(product => {
                       const quantity = basket[product.id] || 0;
                       return (
-                        <div key={product.id} className="border border-slate-200 rounded-xl overflow-hidden flex flex-col group hover:shadow-md transition-shadow">
-                          <div className="aspect-square relative overflow-hidden bg-slate-100">
+                        <div key={product.id} className="group flex flex-col bg-card border rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                          <div className="aspect-[4/3] relative overflow-hidden bg-muted">
                             {product.image_url ? (
-                              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-300">No Image</div>
+                              <div className="w-full h-full flex items-center justify-center text-muted-foreground">No Image</div>
                             )}
+                            {/* Overlay Gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                           </div>
-                          <div className="p-4 flex flex-col flex-1">
-                            <h3 className="font-semibold text-slate-900 line-clamp-2 mb-1">{product.name}</h3>
-                            <p className="text-primary font-bold mt-auto mb-4">{fmt(product.price)}</p>
+                          
+                          <div className="p-5 flex flex-col flex-1">
+                            <h3 className="font-semibold text-base line-clamp-2 mb-2 group-hover:text-primary transition-colors">{product.name}</h3>
+                            <p className="text-primary font-bold text-lg mt-auto mb-5">{fmt(product.price)}</p>
                             
                             {quantity === 0 ? (
                               <button 
                                 onClick={() => updateQuantity(product.id, 1)}
-                                className="w-full h-10 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                                className="w-full h-11 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
                               >
-                                Add to Subscription
+                                <Plus className="h-4 w-4" /> Add Item
                               </button>
                             ) : (
-                              <div className="flex items-center justify-between border border-slate-200 rounded-lg h-10 px-2 bg-slate-50">
-                                <button onClick={() => updateQuantity(product.id, -1)} className="w-8 h-8 flex items-center justify-center rounded bg-white border border-slate-200 shadow-sm text-slate-600 hover:text-slate-900">
+                              <div className="flex items-center justify-between border-2 border-primary rounded-xl h-11 px-2 bg-primary/5">
+                                <button onClick={() => updateQuantity(product.id, -1)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-background shadow-sm text-foreground hover:bg-muted transition-colors">
                                   <Minus className="h-4 w-4" />
                                 </button>
-                                <span className="font-semibold text-slate-900 w-8 text-center">{quantity}</span>
-                                <button onClick={() => updateQuantity(product.id, 1)} className="w-8 h-8 flex items-center justify-center rounded bg-white border border-slate-200 shadow-sm text-slate-600 hover:text-slate-900">
+                                <span className="font-bold text-primary w-8 text-center">{quantity}</span>
+                                <button onClick={() => updateQuantity(product.id, 1)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white shadow-sm hover:bg-primary/90 transition-colors">
                                   <Plus className="h-4 w-4" />
                                 </button>
                               </div>
@@ -187,13 +204,13 @@ export default function BundlesPage() {
 
       </div>
 
-      {/* Floating Subscription Footer */}
+      {/* Floating Subscription Footer - Glassmorphism */}
       {baseTotal > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 animate-in slide-in-from-bottom-full duration-300">
+        <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-40 animate-in slide-in-from-bottom-full duration-300">
           <div className="container mx-auto px-4 h-24 flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-slate-500 font-medium mb-1">Your Custom Selection ({selectedProducts.reduce((acc, i) => acc + i.quantity, 0)} items)</p>
-              <p className="text-2xl font-bold text-slate-900">{fmt(baseTotal)} <span className="text-sm font-normal text-slate-500">/ order</span></p>
+              <p className="text-sm text-muted-foreground font-medium mb-1">Your Basket ({selectedProducts.reduce((acc, i) => acc + i.quantity, 0)} items)</p>
+              <p className="text-2xl font-display font-bold">{fmt(baseTotal)} <span className="text-sm font-normal text-muted-foreground">/ order</span></p>
             </div>
             
             <div className="flex gap-3 shrink-0">
@@ -205,10 +222,10 @@ export default function BundlesPage() {
               </button>
               <button 
                 onClick={() => handleSubscribe('weekly')}
-                className="h-12 flex items-center px-6 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20 gap-2"
+                className="h-12 flex items-center px-6 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25 gap-2 group"
               >
                 Subscribe Weekly
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
