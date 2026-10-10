@@ -1,0 +1,1 @@
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_bundle BOOLEAN DEFAULT false;

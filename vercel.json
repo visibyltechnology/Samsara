@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "https://moonstone-ventures.vercel.app/$1"
+    }
+  ]
+}
